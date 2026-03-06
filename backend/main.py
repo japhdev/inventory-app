@@ -154,3 +154,38 @@ def update_product(id: int, product: ProductSchema):
 
     # Return success message as JSON response
     return {"message": "Product updated successfully"}
+
+
+"""
+DELETE /products/{id}
+
+Remove a product from the database by its ID.
+
+Process:
+1. Establish a connection to the PostgreSQL database.
+2. Create a cursor to execute the SQL query.
+3. Execute a DELETE query targeting the product with the specified id.
+4. Commit the transaction to apply the deletion.
+5. Close the cursor and database connection.
+6. Return a success message.
+"""
+@app.delete("/products/{id}")
+def delete_product(id: int):
+    # Open a new connection to the PostgreSQL database
+    conn = get_connection()
+
+    # Create a cursor to execute the SQL query
+    cursor = conn.cursor()
+
+    # Execute DELETE query for the product with the given id
+    cursor.execute("DELETE FROM product WHERE id=%s", (id,))
+
+    # Commit the transaction to remove the product
+    conn.commit()
+
+    # Close cursor and connection to release resources
+    cursor.close()
+    conn.close()
+
+    # Return success message as JSON response
+    return {"message": "Product deleted successfully"}
