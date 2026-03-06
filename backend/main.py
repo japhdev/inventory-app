@@ -40,7 +40,7 @@ Fields:
 - stock: Available quantity in inventory.
 - category: Product category.
 """
-class ProductoSchema(BaseModel):
+class ProductSchema(BaseModel):
     name: str
     price: float
     stock: int
@@ -95,7 +95,7 @@ Process:
 6. Return a success message.
 """
 @app.post("/products")
-def create_product(product: ProductoSchema):
+def create_product(product: ProductSchema):
     # Open a new connection to the PostgreSQL database
     conn = get_connection()
 
@@ -116,4 +116,41 @@ def create_product(product: ProductoSchema):
     conn.close()
 
     # Return success message as JSON response
-    return {"message": "product created"}
+    return {"message": "Product created successfully"}
+
+
+"""
+PUT /products/{id}
+
+Update an existing product in the database.
+
+Process:
+1. Establish a connection to the PostgreSQL database.
+2. Create a cursor to execute the SQL query.
+3. Execute an UPDATE query to modify the product with the given id using name, price, stock, and category.
+4. Commit the transaction to save the changes.
+5. Close the cursor and database connection.
+6. Return a success message.
+"""
+@app.put("/products/{id}")
+def update_product(id: int, product: ProductSchema):
+    conn = get_connection()
+
+    # Create a cursor to execute the SQL query
+    cursor = conn.cursor()
+
+    # Execute UPDATE query to modify the product with the given id
+    cursor.execute(
+        "UPDATE products SET name=%s, price=%s, stock=%s, category=%s WHERE id=%s",
+        (product.name, product.price, product.stock, product.category, id)
+    )
+
+    # Commit the transaction to save the changes to the database
+    conn.commit()
+
+    # Close cursor and connection to release resources
+    cursor.close()
+    conn.close()
+
+    # Return success message as JSON response
+    return {"message": "Product updated successfully"}
