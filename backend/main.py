@@ -80,3 +80,40 @@ def get_products():
 
     # Return products as JSON response
     return products
+
+"""
+POST /products
+
+Create a new product in the database.
+
+Process:
+1. Establish a connection to the PostgreSQL database.
+2. Create a cursor to execute the SQL query.
+3. Execute an INSERT query to add the product with name, price, stock, and category.
+4. Commit the transaction to save the changes.
+5. Close the cursor and database connection.
+6. Return a success message.
+"""
+@app.post("/products")
+def create_product(product: ProductoSchema):
+    # Open a new connection to the PostgreSQL database
+    conn = get_connection()
+
+    # Create a cursor to execute the SQL query
+    cursor = conn.cursor()
+
+    # Execute INSERT query to add the product with name, price, stock, and category
+    cursor.execute(
+        "INSERT INTO products (name, price, stock, category) VALUES (%s, %s, %s, %s)",
+        (product.name, product.price, product.stock, product.category)
+    )
+
+    # Commit the transaction to save the changes to the database
+    conn.commit()
+
+    # Close cursor and connection to release resources
+    cursor.close()
+    conn.close()
+
+    # Return success message as JSON response
+    return {"message": "product created"}
