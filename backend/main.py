@@ -2,6 +2,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from database import get_connection
+import psycopg2
+import psycopg2.extras
 
 
 # Create the main FastAPI application instance.
@@ -178,7 +180,7 @@ def delete_product(id: int):
     cursor = conn.cursor()
 
     # Execute DELETE query for the product with the given id
-    cursor.execute("DELETE FROM product WHERE id=%s", (id,))
+    cursor.execute("DELETE FROM products WHERE id=%s", (id,))
 
     # Commit the transaction to remove the product
     conn.commit()
