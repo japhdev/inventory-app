@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import ProductForm from "./components/ProductForm";
+import SellPanel from "./components/SellPanel";
 import "./App.css";
 
 /**
@@ -19,7 +20,7 @@ function App() {
   // State to store the product currently selected for editing
   const [productEdit, setProductEdit] = useState(null);
 
-    // State to control the visibility of the low stock alert banner
+  // State to control the visibility of the low stock alert banner
   const [showBanner, setShowBanner] = useState(true);
 
   /**
@@ -87,56 +88,58 @@ function App() {
           )}
         </div>
       )}
-
-      {/* Table to display products */}
-      <table className="products-table">
-        {/* Table header with column names */}
-        <thead className="table-header">
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Price</th>
-            <th>Stock</th>
-            <th>Category</th>
-            <th>Actions</th>
-            <th>State</th>
-          </tr>
-        </thead>
-
-        {/* Table body with product rows */}
-        <tbody>
-          {products.map((p) => (
-            <tr key={p.id} className={`table-row ${p.stock <= 3 && p.stock > 0 ? "row-alert" : ""}`}>
-              {/* Cells with product information */}
-              <td className="table-cell">{p.id}</td>
-              <td className="table-cell">{p.name}</td>
-              <td className="table-cell">{p.price}</td>
-              <td className="table-cell">{p.stock} {p.stock <= 3 && p.stock > 0 ? "⚠️" : ""}</td>
-              <td className="table-cell">{p.category}</td>
-
-              {/* Action buttons (edit or delete product) */}
-              <td>
-                <button className="btn-edit" onClick={() => setProductEdit(p)}>
-                  Edit
-                </button>
-                <button
-                  className="btn-delete"
-                  onClick={() => deleteProduct(p.id)}
-                >
-                  Delete
-                </button>
-              </td>
-              {/* Product status indicator  */}
-              <td>
-                {p.is_active
-                  ? <span className="badge-active">●  Active</span>
-                  : <span className="badge-inactive">●  Inactive</span>
-                }
-              </td>
+      <div className="main-layout">
+        {/* Table to display products */}
+        <table className="products-table">
+          {/* Table header with column names */}
+          <thead className="table-header">
+            <tr>
+              <th className="col-id">ID</th>
+              <th className="col-name">Name</th>
+              <th className="col-price">Price</th>
+              <th className="col-stock">Stock</th>
+              <th className="col-category">Category</th>
+              <th className="col-actions">Actions</th>
+              <th className="col-state">State</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+
+          {/* Table body with product rows */}
+          <tbody>
+            {products.map((p) => (
+              <tr key={p.id} className={`table-row ${p.stock <= 3 && p.stock > 0 ? "row-alert" : ""}`}>
+                {/* Cells with product information */}
+                <td className="table-cell">{p.id}</td>
+                <td className="table-cell" title={p.name}>{p.name}</td>
+                <td className="table-cell">{p.price}</td>
+                <td className="table-cell">{p.stock} {p.stock <= 3 && p.stock > 0 ? "⚠️" : ""}</td>
+                <td className="table-cell" title={p.category}>{p.category}</td>
+
+                {/* Action buttons (edit or delete product) */}
+                <td>
+                  <button className="btn-edit" onClick={() => setProductEdit(p)}>
+                    Edit
+                  </button>
+                  <button
+                    className="btn-delete"
+                    onClick={() => deleteProduct(p.id)}
+                  >
+                    Delete
+                  </button>
+                </td>
+                {/* Product status indicator  */}
+                <td>
+                  {p.is_active
+                    ? <span className="badge-active">●  Active</span>
+                    : <span className="badge-inactive">●  Inactive</span>
+                  }
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <SellPanel products={products} onSaleComplete={fetchProducts} />
+      </div>
     </div>
   );
 }
