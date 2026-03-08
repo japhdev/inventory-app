@@ -87,3 +87,24 @@
   transition: ease-out 0.3s;
   background: #f7d3d3;
 }
+
+.btn-edit {
+  background: #e0e7f2;
+  color: rgb(18, 69, 140);
+  border: 1px solid rgba(69, 131, 218, 0.359);
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-right: 5px;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-edit:hover {
+  transition: ease-out 0.3s;
+  background: #d3e3f7;
+}
