@@ -197,5 +197,49 @@ def delete_product(id: int):
     cursor.close()
     conn.close()
 
+"""
+PUT /products/{id}/sell
+
+Discount stock when a product is sold.
+
+Process:
+1. Establish a connection to the PostgreSQL database.
+2. Check if the product exists.
+3. Verify there is enough stock.
+4. Subtract the sold quantity and update is_active accordingly.
+5. Commit the transaction.
+6. Return a success message.
+"""
+@app.put("/products/{id}/sell")
+def sell_product(id: int, quantity: int):
+    conn = get_connection()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    # Check if product exists and get current stock
+    cursor.execute("SELECT stock FROM products WHERE id=%s", (id,))
+    product = cursor.fetchone()
+
+    if not product:
+        cursor.close()
+        conn.close()
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    if product["stock"] < quantity:
+        cursor.close()
+        conn.close()
+        raise HTTPException(status_code=400, detail="Not enough stock")
+
+    new_stock = product["stock"] - quantity
+    is_active = new_stock > 0
+
+    cursor.execute(
+        "UPDATE products SET stock=%s, is_active=%s WHERE id=%s",
+        (new_stock, is_active, id)
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+
     # Return success message as JSON response
     return {"message": "Product deleted successfully"}
