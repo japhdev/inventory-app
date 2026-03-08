@@ -19,6 +19,9 @@ function App() {
   // State to store the product currently selected for editing
   const [productEdit, setProductEdit] = useState(null);
 
+    // State to control the visibility of the low stock alert banner
+  const [showBanner, setShowBanner] = useState(true);
+
   /**
    * Function to fetch all products from the backend API.
    *
@@ -71,6 +74,20 @@ function App() {
         onCancel={() => setProductEdit(null)}
       />
 
+      {/* Low stock alert banner — only visible when there are low stock products */}
+      {products.some(p => p.stock <= 3 && p.stock > 0) && (
+        <div>
+          <button className="btn-toggle-banner" onClick={() => setShowBanner(!showBanner)}>
+            ⚠️ Low stock alerts {showBanner ? "▲" : "▼"}
+          </button>
+          {showBanner && (
+            <div className="alert-banner">
+              Some products are in low stock. Check back soon.
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Table to display products */}
       <table className="products-table">
         {/* Table header with column names */}
@@ -89,12 +106,12 @@ function App() {
         {/* Table body with product rows */}
         <tbody>
           {products.map((p) => (
-            <tr className="table-row" key={p.id}>
+            <tr key={p.id} className={`table-row ${p.stock <= 3 && p.stock > 0 ? "row-alert" : ""}`}>
               {/* Cells with product information */}
               <td className="table-cell">{p.id}</td>
               <td className="table-cell">{p.name}</td>
               <td className="table-cell">{p.price}</td>
-              <td className="table-cell">{p.stock}</td>
+              <td className="table-cell">{p.stock} {p.stock <= 3 && p.stock > 0 ? "⚠️" : ""}</td>
               <td className="table-cell">{p.category}</td>
 
               {/* Action buttons (edit or delete product) */}
