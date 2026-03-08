@@ -41,12 +41,14 @@ Fields:
 - price: Product price as a decimal number.
 - stock: Available quantity in inventory.
 - category: Product category.
+- is_active: Indicates whether the product is active in the inventory system.
 """
 class ProductSchema(BaseModel):
     name: str
     price: float
     stock: int
     category: str
+    is_active: bool = True
 
 """
 GET /products
@@ -104,10 +106,12 @@ def create_product(product: ProductSchema):
     # Create a cursor to execute the SQL query
     cursor = conn.cursor()
 
+    is_active = product.stock > 0
+
     # Execute INSERT query to add the product with name, price, stock, and category
     cursor.execute(
-        "INSERT INTO products (name, price, stock, category) VALUES (%s, %s, %s, %s)",
-        (product.name, product.price, product.stock, product.category)
+        "INSERT INTO products (name, price, stock, category, is_active) VALUES (%s, %s, %s, %s, %s)",
+        (product.name, product.price, product.stock, product.category, is_active)
     )
 
     # Commit the transaction to save the changes to the database
@@ -120,7 +124,6 @@ def create_product(product: ProductSchema):
     # Return success message as JSON response
     return {"message": "Product created successfully"}
 
-
 """
 PUT /products/{id}
 
@@ -129,10 +132,11 @@ Update an existing product in the database.
 Process:
 1. Establish a connection to the PostgreSQL database.
 2. Create a cursor to execute the SQL query.
-3. Execute an UPDATE query to modify the product with the given id using name, price, stock, and category.
-4. Commit the transaction to save the changes.
-5. Close the cursor and database connection.
-6. Return a success message.
+3. Determine the product status (is_active). A product is considered active when its stock is greater than 0.
+4. Execute an UPDATE query to modify the product with the given id using name, price, stock, and category.
+5. Commit the transaction to save the changes.
+6. Close the cursor and database connection.
+7. Return a success message.
 """
 @app.put("/products/{id}")
 def update_product(id: int, product: ProductSchema):
@@ -141,10 +145,14 @@ def update_product(id: int, product: ProductSchema):
     # Create a cursor to execute the SQL query
     cursor = conn.cursor()
 
+    # Determine if the product should be active.
+    # Products with stock greater than 0 are considered active.
+    is_active = product.stock > 0
+
     # Execute UPDATE query to modify the product with the given id
     cursor.execute(
-        "UPDATE products SET name=%s, price=%s, stock=%s, category=%s WHERE id=%s",
-        (product.name, product.price, product.stock, product.category, id)
+        "UPDATE products SET name=%s, price=%s, stock=%s, category=%s, is_active=%s WHERE id=%s",
+        (product.name, product.price, product.stock, product.category, is_active, id)
     )
 
     # Commit the transaction to save the changes to the database

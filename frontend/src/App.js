@@ -82,6 +82,7 @@ function App() {
             <th>Stock</th>
             <th>Category</th>
             <th>Actions</th>
+            <th>State</th>
           </tr>
         </thead>
 
@@ -107,6 +108,13 @@ function App() {
                 >
                   Delete
                 </button>
+              </td>
+              {/* Product status indicator  */}
+              <td>
+                {p.is_active
+                  ? <span className="badge-active">●  Active</span>
+                  : <span className="badge-inactive">●  Inactive</span>
+                }
               </td>
             </tr>
           ))}
