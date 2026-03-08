@@ -27,7 +27,12 @@ function App() {
     .then(res => res.json())
     .then(data => setProducts(data))
   };
-
+  /**
+ * Function to delete a product from the backend API.
+ *
+ * Sends a DELETE request to /products/{id}. After the product is deleted,
+ * the product list is refreshed by calling fetchProducts().
+ */
   const deleteProduct = (id) => {
   fetch(`http://localhost:8000/products/${id}`, {
     method: "DELETE"
