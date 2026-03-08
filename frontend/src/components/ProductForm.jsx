@@ -75,10 +75,10 @@ function ProductForm({ onProductCreate, productEdit, onCancel }) {
             <input name="name" placeholder="Name" value={form.name} onChange={handleChange} required />
 
             {/* Input field for product price (number type) */}
-            <input name="price" placeholder="Price" value={form.price} onChange={handleChange} required type="number" />
+            <input name="price" placeholder="Price" value={form.price} onChange={handleChange} required type="number" min="0"/>
 
             {/* Input field for product stock (number type) */}
-            <input name="stock" placeholder="Stock" value={form.stock} onChange={handleChange} required type="number" />
+            <input name="stock" placeholder="Stock" value={form.stock} onChange={handleChange} required type="number" min="0"/>
 
             {/* Input field for product category */}
             <input name="category" placeholder="Category" value={form.category} onChange={handleChange} required />
