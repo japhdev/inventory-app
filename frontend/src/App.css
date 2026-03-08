@@ -67,3 +67,23 @@
 .form button:hover {
   background-color: #0056b3;
 }
+
+.btn-delete {
+  background: #f2e0e0;
+  color: rgb(140, 18, 18);
+  border: 1px solid rgba(218, 69, 69, 0.359);
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-delete:hover {
+  transition: ease-out 0.3s;
+  background: #f7d3d3;
+}

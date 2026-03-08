@@ -28,6 +28,14 @@ function App() {
     .then(data => setProducts(data))
   };
 
+  const deleteProduct = (id) => {
+  fetch(`http://localhost:8000/products/${id}`, {
+    method: "DELETE"
+  })
+    .then(res => res.json())
+    .then(() => fetchProducts());
+  };
+
   // useEffect hook to load products when the component mounts
   useEffect(() =>{
     fetchProducts();
@@ -52,6 +60,7 @@ function App() {
             <th>Price</th>
             <th>Stock</th>
             <th>Category</th>
+            <th>Actions</th>
           </tr>
         </thead>
 
@@ -65,6 +74,9 @@ function App() {
               <td className="table-cell">{p.price}</td>
               <td className="table-cell">{p.stock}</td>
               <td className="table-cell">{p.category}</td>
+              <td>
+        <button className ="btn-delete"onClick={() => deleteProduct(p.id)}>Delete</button>
+      </td>
             </tr>
           ))}
         </tbody>
