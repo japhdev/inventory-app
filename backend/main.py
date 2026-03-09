@@ -2,8 +2,10 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from database import get_connection
+from auth import hash_password, verify_password, create_access_token, decode_token
 import psycopg2
 import psycopg2.extras
+
 
 
 # Create the main FastAPI application instance.
@@ -30,25 +32,52 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-"""
-Schema used to validate product data received from the client.
 
-This model ensures that every product sent to the API
-contains the required fields with the correct data types.
-
-Fields:
-- name: Product name.
-- price: Product price as a decimal number.
-- stock: Available quantity in inventory.
-- category: Product category.
-- is_active: Indicates whether the product is active in the inventory system.
-"""
 class ProductSchema(BaseModel):
+    """
+    Schema used to validate product data received from the client.
+
+    This model ensures that every product sent to the API
+    contains the required fields with the correct data types.
+
+    Fields:
+        name      (str):   Product name.
+        price     (float): Product price as a decimal number.
+        stock     (int):   Available quantity in inventory.
+        category  (str):   Product category.
+        is_active (bool):  Indicates whether the product is active. Defaults to True.
+    """
     name: str
     price: float
     stock: int
     category: str
     is_active: bool = True
+
+
+class UserRegisterSchema(BaseModel):
+    """
+    Schema used to validate user registration data received from the client.
+
+    Fields:
+        username (str): Unique display name chosen by the user.
+        email    (str): User's email address. Used as login identifier.
+        password (str): Plain text password. It will be hashed before storage.
+    """
+    username: str
+    email: str
+    password: str
+
+
+class UserLoginSchema(BaseModel):
+    """
+    Schema used to validate login credentials received from the client.
+
+    Fields:
+        email    (str): Registered email address of the user.
+        password (str): Plain text password to verify against the stored hash.
+    """
+    email: str
+    password: str
 
 """
 GET /products
@@ -197,6 +226,8 @@ def delete_product(id: int):
     cursor.close()
     conn.close()
 
+    return {"message": "Product deleted successfully"}
+
 """
 PUT /products/{id}/sell
 
@@ -240,6 +271,87 @@ def sell_product(id: int, quantity: int):
     cursor.close()
     conn.close()
 
-
     # Return success message as JSON response
-    return {"message": "Product deleted successfully"}
+    return {"message": "Sale registered successfully"}
+
+"""
+POST /register
+
+Register a new user in the system.
+
+Process:
+1. Establish a connection to the PostgreSQL database.
+2. Check if the email is already registered to avoid duplicates.
+3. Hash the plain text password using bcrypt before storing it.
+4. Insert the new user (username, email, hashed password) into the database.
+5. Commit the transaction and close the connection.
+6. Return a success message.
+
+Raises:
+    HTTPException 400: If the email is already registered.
+"""
+@app.post("/register")
+def register(user: UserRegisterSchema):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # Check if email already exists
+    cursor.execute("SELECT id FROM users WHERE email=%s", (user.email,))
+    if cursor.fetchone():
+        cursor.close()
+        conn.close()
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    # Hash password before saving — never store plain text passwords
+    password_hash = hash_password(user.password)
+
+    cursor.execute(
+        "INSERT INTO users (username, email, password_hash) VALUES (%s, %s, %s)",
+        (user.username, user.email, password_hash)
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return {"message": "User registered successfully"}
+
+
+"""
+POST /login
+
+Authenticate a user and return a JWT access token.
+
+Process:
+1. Establish a connection to the PostgreSQL database.
+2. Search for the user by email address.
+3. Verify the submitted password matches the stored hash.
+4. If valid, generate a signed JWT token containing email and username.
+5. Return the token along with token type and username.
+
+Raises:
+    HTTPException 401: If the email does not exist or the password is incorrect.
+                    Both cases return the same message to avoid revealing
+                    which field is wrong (security best practice).
+"""
+@app.post("/login")
+def login(user: UserLoginSchema):
+    conn = get_connection()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    # Find user by email
+    cursor.execute("SELECT * FROM users WHERE email=%s", (user.email,))
+    db_user = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    # Verify user exists and password is correct
+    if not db_user or not verify_password(user.password, db_user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    # Generate JWT token
+    token = create_access_token({"sub": db_user["email"], "username": db_user["username"]})
+
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "username": db_user["username"]
+    }
