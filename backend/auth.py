@@ -14,7 +14,7 @@ import bcrypt
 import os
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
-from passlib.context import CryptContext
+
 
 # Secret key used to sign JWT tokens.
 # This key should be stored securely in the environment variables.
@@ -34,21 +34,24 @@ ALGORITHM = "HS256"
 # After 30 minutes, the token expires and the user must authenticate again.
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-# Creates a CryptContext instance that acts as the encryption "engine".
-#
-#   schemes=["bcrypt"]  → We use bcrypt as the primary hashing algorithm.
-#                         bcrypt is intentionally slow, which makes brute-force
-#                         attacks significantly harder.
-#
-#   deprecated="auto"   → If a newer algorithm is added in the future,
-#                         passlib will automatically re-hash old passwords
-#                         the next time the user logs in.
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-
+# bcrypt is used directly (without passlib) to hash and verify passwords.
+#
+#   bcrypt.hashpw()  → Hashes a password using the bcrypt algorithm.
+#                      bcrypt is intentionally slow, which makes brute-force
+#                      attacks significantly harder.
+#
+#   bcrypt.gensalt() → Generates a random salt each time, ensuring that
+#                      the same password produces a different hash every time.
+#
+#   .encode("utf-8") → bcrypt requires bytes, not strings.
+#                      encode() converts the string to bytes before hashing.
+#
+#   .decode("utf-8") → Converts the resulting bytes back to a string
+#                      so it can be stored in the database.
 def hash_password(password: str) -> str:
     """
-    Generates a secure hash from a plain text password.
+    Generates a secure hash from a plain text password using bcrypt.
 
     This function is used when REGISTERING a new user.
     The original password is never stored in the database,
@@ -64,16 +67,19 @@ def hash_password(password: str) -> str:
         hashed = hash_password("myPassword123")
         # Store 'hashed' in the database, not the original password
     """
-    return pwd_context.hash(password)
+    # encode("utf-8") converts the string to bytes — required by bcrypt
+    # gensalt() generates a unique random salt for each hash
+    # decode("utf-8") converts the result back to string for database storage
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
-    Compares a plain text password against its hashed version.
+    Compares a plain text password against its hashed version using bcrypt.
 
     This function is used during LOGIN.
-    The hash is never decrypted; instead, the submitted password is hashed
-    and compared against the stored hash.
+    The hash is never decrypted; instead, bcrypt hashes the submitted
+    password and compares it against the stored hash internally.
 
     Args:
         plain_password  (str): Password entered by the user at login.
@@ -86,8 +92,12 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         is_valid = verify_password("myPassword123", hash_stored_in_db)
         if is_valid:
             # Grant access
-    """   
-    return pwd_context.verify(plain_password, hashed_password)
+    """
+    # Both values must be encoded to bytes before bcrypt can compare them  
+    return bcrypt.checkpw(
+        plain_password.encode("utf-8"),
+        hashed_password.encode("utf-8")
+    )
 
 def create_access_token(data: dict) -> str:
     """
