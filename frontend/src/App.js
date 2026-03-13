@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ProductForm from "./components/ProductForm";
 import SellPanel from "./components/SellPanel";
+import Login from "./pages/Login";
+import Register from "./pages/Register"
 import "./App.css";
 
 /**
@@ -12,7 +15,7 @@ import "./App.css";
  * - Allowing users to edit or delete products
  * - Refreshing the product list when changes occur
  */
-function App() {
+function Inventory() {
 
   // State to store the list of products fetched from the API
   const [products, setProducts] = useState([]);
@@ -22,6 +25,9 @@ function App() {
 
   // State to control the visibility of the low stock alert banner
   const [showBanner, setShowBanner] = useState(true);
+
+  //Username of the logged-in user, stored during login
+  const username = localStorage.getItem("username");
 
   /**
    * Function to fetch all products from the backend API.
@@ -48,6 +54,12 @@ function App() {
       .then(() => fetchProducts());
   };
 
+  const handleLogout = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("username");
+  window.location.href = "/login";
+};
+
   /*
     useEffect runs once when the component is mounted.
     It loads the initial list of products from the API.
@@ -58,8 +70,13 @@ function App() {
 
   return (
     <div className="inventory-container">
-      {/* Main title of the application */}
-      <h1 className="inventory-title">Inventory</h1>
+      <div className="inventory-header">
+        <h1 className="inventory-title">Inventory</h1>
+        <div className="header-user">
+          <span>{username}</span>
+          <button className="btn-logout" onClick={handleLogout}>Sign out</button>
+        </div>
+      </div>
 
       {/* 
         ProductForm component used for creating or editing products.
@@ -141,6 +158,21 @@ function App() {
         <SellPanel products={products} onSaleComplete={fetchProducts} />
       </div>
     </div>
+  );
+}
+
+
+function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("token"));
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<Login onLogin={() => setIsAuthenticated(true)} />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/" element={isAuthenticated ? <Inventory /> : <Navigate to="/login" />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
