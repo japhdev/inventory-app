@@ -355,3 +355,117 @@ def login(user: UserLoginSchema):
         "token_type": "bearer",
         "username": db_user["username"]
     }
+
+"""
+GET /categories
+
+Retrieve all categories stored in the database, sorted alphabetically.
+
+Process:
+1. Establish a connection to the PostgreSQL database.
+2. Create a cursor that returns results as dictionaries.
+3. Execute a SQL query to retrieve all records from the categories table, ordered by name in ascending order.
+4. Fetch all results.
+5. Close the cursor and database connection.
+6. Return the list of categories as JSON.
+"""
+@app.get("/categories")
+def get_categories():
+    # Open a new connection to the PostgreSQL database
+    conn = get_connection()
+
+    # Create a cursor that returns rows as dictionaries instead of tuples
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    # Execute SQL query to retrieve all categories sorted alphabetically
+    cursor.execute("SELECT * FROM categories ORDER BY name")
+
+    # Fetch all rows from the query result
+    categories = cursor.fetchall()
+
+    # Close cursor and connection to release resources
+    cursor.close()
+    conn.close()
+
+    # Return categories as JSON response
+    return categories
+
+"""
+POST /categories
+
+Create a new category in the database.
+
+Process:
+1. Establish a connection to the PostgreSQL database.
+2. Create a cursor to execute the SQL query.
+3. Execute an INSERT query to add the new category using the provided name.
+4. Commit the transaction to save the changes.
+5. Close the cursor and database connection.
+6. Return a success message.
+
+Raises:
+    HTTPException 400: If the category name already exists in the database
+    (enforced by a unique constraint at the database level).
+"""
+@app.post("/categories")
+def create_category(category: dict):
+    # Open a new connection to the PostgreSQL database
+    conn = get_connection()
+
+    # Create a cursor to execute the SQL query
+    cursor = conn.cursor()
+
+    try:
+        # Execute INSERT query to add the new category
+        cursor.execute(
+            "INSERT INTO categories (name) VALUES (%s)",
+            (category["name"],)
+        )
+
+        # Commit the transaction to save the changes to the database
+        conn.commit()
+    except Exception:
+        # Roll back the transaction if an error occurs (e.g. duplicate name)
+        conn.rollback()
+        raise HTTPException(status_code=400, detail="Category already exists")
+
+    # Close cursor and connection to release resources
+    cursor.close()
+    conn.close()
+
+    # Return success message as JSON response
+    return {"message": "Category created successfully"}
+
+"""
+DELETE /categories/{id}
+
+Remove a category from the database by its ID.
+
+Process:
+1. Establish a connection to the PostgreSQL database.
+2. Create a cursor to execute the SQL query.
+3. Execute a DELETE query targeting the category with the specified id.
+4. Commit the transaction to apply the deletion.
+5. Close the cursor and database connection.
+6. Return a success message.
+"""
+@app.delete("/categories/{id}")
+def delete_category(id: int):
+    # Open a new connection to the PostgreSQL database
+    conn = get_connection()
+
+    # Create a cursor to execute the SQL query
+    cursor = conn.cursor()
+
+    # Execute DELETE query for the category with the given id
+    cursor.execute("DELETE FROM categories WHERE id=%s", (id,))
+
+    # Commit the transaction to remove the category
+    conn.commit()
+
+    # Close cursor and connection to release resources
+    cursor.close()
+    conn.close()
+
+    # Return success message as JSON response
+    return {"message": "Category deleted successfully"}
