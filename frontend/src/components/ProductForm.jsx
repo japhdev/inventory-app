@@ -16,8 +16,23 @@ function ProductForm({ onProductCreate, productEdit, onCancel }) {
         name: "",
         price: "",
         stock: "",
-        category: ""
+        category: "",
     });
+
+    // Load categories from API
+    const fetchCategories = () => {
+        fetch("http://localhost:8000/categories")
+            .then((res) => res.json())
+            .then((data) => setCategories(data));
+    };
+
+    const [categories, setCategories] = useState([]);
+    const [newCategory, setNewCategory] = useState("");
+    const [showAddCategory, setShowAddCategory] = useState(false);
+
+    useEffect(() => {
+        fetchCategories();
+    }, []);
 
     /**
      * Updates the form fields when a product is selected for editing.
@@ -36,6 +51,25 @@ function ProductForm({ onProductCreate, productEdit, onCancel }) {
      */
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
+    };
+
+    /**
+     * Sends a request to create a new category and updates the UI state.
+     */
+    const handleAddCategory = () => {
+        if (!newCategory.trim()) return;
+        fetch("http://localhost:8000/categories", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: newCategory.trim() }),
+        })
+            .then((res) => res.json())
+            .then(() => {
+                fetchCategories();
+                setForm({ ...form, category: newCategory.trim() });
+                setNewCategory("");
+                setShowAddCategory(false);
+            });
     };
 
     /**
@@ -58,37 +92,82 @@ function ProductForm({ onProductCreate, productEdit, onCancel }) {
         fetch(url, {
             method: method,
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(form)
+            body: JSON.stringify(form),
         })
-            .then(res => res.json())
+            .then((res) => res.json())
             .then(() => {
                 onProductCreate();
                 onCancel();
             });
-
     };
 
     return (
         <form onSubmit={handleSubmit} className="form">
-
             {/* Input field for product name */}
-            <input name="name" placeholder="Name" value={form.name} onChange={handleChange} required />
+            <input
+                name="name"
+                placeholder="Name"
+                value={form.name}
+                onChange={handleChange}
+                required
+            />
 
             {/* Input field for product price (number type) */}
-            <input name="price" placeholder="Price" value={form.price} onChange={handleChange} required type="number" min="0"/>
+            <input
+                name="price"
+                placeholder="Price"
+                value={form.price}
+                onChange={handleChange}
+                required
+                type="number"
+                min="0"
+            />
 
             {/* Input field for product stock (number type) */}
-            <input name="stock" placeholder="Stock" value={form.stock} onChange={handleChange} required type="number" min="0"/>
+            <input
+                name="stock"
+                placeholder="Stock"
+                value={form.stock}
+                onChange={handleChange}
+                required
+                type="number"
+                min="0"
+            />
 
-            {/* Input field for product category */}
-            <input name="category" placeholder="Category" value={form.category} onChange={handleChange} required />
+            {/* Category dropdown */}
+            <select name="category" value={form.category} onChange={handleChange} required className="form-select">
+                <option value="">Select category...</option>
+                {categories.map((c) => (
+                    <option key={c.id} value={c.name}>{c.name}</option>
+                ))}
+            </select>
+
+            {/* Add new category */}
+            {!showAddCategory ? (
+                <button type="button" onClick={() => setShowAddCategory(true)}>
+                    + New category
+                </button>
+            ) : (
+                <div className="new-category-form">
+                    <input
+                        placeholder="Category name"
+                        value={newCategory}
+                        onChange={(e) => setNewCategory(e.target.value)}
+                    />
+                    <button type="button" onClick={handleAddCategory}>Add Category</button>
+                    <button type="button" className="btn-cancel" onClick={() => setShowAddCategory(false)}>Cancel</button>
+                </div>
+            )}
 
             {/* Submit button for creating or updating a product */}
             <button type="submit">{productEdit ? "Save Change" : "Add"}</button>
 
             {/* Submit button for creating or updating a product */}
-            {productEdit && (<button type="button" onClick={onCancel}>Cancel</button>)}
-
+            {productEdit && (
+                <button type="button"  className="btn-cancel" onClick={onCancel}>
+                    Cancel
+                </button>
+            )}
         </form>
     );
 }
