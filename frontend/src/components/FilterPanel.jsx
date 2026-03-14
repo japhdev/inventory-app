@@ -1,9 +1,9 @@
-function FilterPanel({ categories, filters, onFilterChange, onClearFilter }) {
+function FilterPanel({ categories, filters, onFilterChange, onClearFilters }) {
     return (
         <div className="filter-panel">
             <div className="filter-header">
                 <h3 className="filter-title">Filter</h3>
-                <button className="btn-clear-filter-" onClick={onClearFilter}>Clear</button>
+                <button className="btn-clear-filters" onClick={onClearFilters}>Clear</button>
             </div>
             {/*Search by name */}
             <div className="filter-group">
@@ -47,10 +47,10 @@ function FilterPanel({ categories, filters, onFilterChange, onClearFilter }) {
                     <option value="">All</option>
                     <option value="name_asc">A-Z</option>
                     <option value="name_desc">Z-A</option>
-                    <option value="price_asc">Price ↑</option>
-                    <option value="price_desc">Price ↓</option>
-                    <option value="stock_asc">Stock ↑</option>
-                    <option value="stock_desc">Stock ↓</option>
+                    <option value="price_asc">Price: Low to High</option>
+                    <option value="price_desc">Price: High to Low </option>
+                    <option value="stock_asc">Stock: Low to High</option>
+                    <option value="stock_desc">Stock: High to Low</option>
                 </select>
             </div>
         </div>
