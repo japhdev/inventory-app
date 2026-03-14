@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ProductForm from "./components/ProductForm";
 import SellPanel from "./components/SellPanel";
+import FilterPanel from "./components/FilterPanel"
 import Login from "./pages/Login";
 import Register from "./pages/Register"
 import "./App.css";
@@ -10,10 +11,11 @@ import "./App.css";
  * Main component of the inventory application.
  *
  * This component is responsible for:
- * - Fetching the list of products from the backend API
- * - Displaying products in a structured table
- * - Allowing users to edit or delete products
- * - Refreshing the product list when changes occur
+ * - Fetch and display all products from the backend
+ * - Apply filters and sorting to the product list
+ * - Handle product creation, editing, and deletion
+ * - Display low stock alerts
+ * - Show the sell panel and filter panel
  */
 function Inventory() {
 
@@ -25,6 +27,17 @@ function Inventory() {
 
   // State to control the visibility of the low stock alert banner
   const [showBanner, setShowBanner] = useState(true);
+
+  // List of categories fetched from the API
+  const [categories, setCategories] = useState([]);
+
+  // Active filter values
+  const [filters, setFilters] = useState({
+    search: "",
+    category: "",
+    status: "",
+    sortBy: ""
+  });
 
   //Username of the logged-in user, stored during login
   const username = localStorage.getItem("username");
@@ -40,6 +53,17 @@ function Inventory() {
       .then((res) => res.json())
       .then((data) => setProducts(data));
   };
+
+  /**
+   * Fetches all categories from the backend API.
+   * Used to populate the filter panel dropdown.
+   */
+  const fetchCategories = () => {
+    fetch("http://localhost:8000/categories")
+      .then((res) => res.json())
+      .then((data) => setCategories(data))
+  };
+
   /**
    * Function to delete a product from the backend API.
    *
@@ -54,22 +78,69 @@ function Inventory() {
       .then(() => fetchProducts());
   };
 
+  /**
+   * Logs out the current user by clearing localStorage
+   * and redirecting to the login page.
+   */
   const handleLogout = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("username");
-  window.location.href = "/login";
-};
+    localStorage.removeItem("token");
+    localStorage.removeItem("username");
+    window.location.href = "/login";
+  };
+  const handleFilterChange = (key, value) => {
+    setFilters({ ...filters, [key]: value });
+  };
 
-  /*
-    useEffect runs once when the component is mounted.
-    It loads the initial list of products from the API.
-  */
+  /**
+   * Resets all filters to their default empty values.
+   */
+  const handleClearFilters = () => {
+    setFilters({ search: "", category: "", status: "", sortBy: "" });
+  };
+
+  /**
+   * Returns a filtered and sorted copy of the products array
+   * based on the current filter state.
+   */
+  const filteredProducts = products
+    .filter((p) => {
+      const matchSearch = p.name.toLowerCase().includes(filters.search.toLowerCase());
+      const matchCategory = filters.category ? p.category === filters.category : true;
+      const matchStatus = filters.status === "active" ? p.is_active :
+        filters.status === "inactive" ? !p.is_active : true;
+      return matchSearch && matchCategory && matchStatus;
+    })
+    .sort((a, b) => {
+      if (filters.sortBy === "name_asc") return a.name.localeCompare(b.name);
+      if (filters.sortBy === "name_desc") return b.name.localeCompare(a.name);
+      if (filters.sortBy === "price_asc") return a.price - b.price;
+      if (filters.sortBy === "price_desc") return b.price - a.price;
+      if (filters.sortBy === "stock_asc") return a.stock - b.stock;
+      if (filters.sortBy === "stock_desc") return b.stock - a.stock;
+      return 0;
+    });
+
+  // Load products and categories on component mount
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, []);
 
   return (
     <div className="inventory-container">
+
+       {/* Filter Panel */}
+        <FilterPanel
+          categories={categories}
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onClearFilters={handleClearFilters}
+        />
+
+      {/* Sell Panel */}
+        <SellPanel products={products} onSaleComplete={fetchProducts} />
+
+      {/* Central content */}
       <div className="inventory-header">
         <h1 className="inventory-title">Inventory</h1>
         <div className="header-user">
@@ -105,6 +176,7 @@ function Inventory() {
           )}
         </div>
       )}
+
       <div className="main-layout">
         {/* Table to display products */}
         <table className="products-table">
@@ -123,7 +195,7 @@ function Inventory() {
 
           {/* Table body with product rows */}
           <tbody>
-            {products.map((p) => (
+            {filteredProducts.map((p) => (
               <tr key={p.id} className={`table-row ${p.stock <= 3 && p.stock > 0 ? "row-alert" : ""}`}>
                 {/* Cells with product information */}
                 <td className="table-cell">{p.id}</td>
@@ -155,13 +227,19 @@ function Inventory() {
             ))}
           </tbody>
         </table>
-        <SellPanel products={products} onSaleComplete={fetchProducts} />
       </div>
     </div>
   );
 }
 
-
+/**
+ * App component — root of the application.
+ *
+ * Manages authentication state and defines public/protected routes.
+ * - /login → Login page (public)
+ * - /register → Register page (public)
+ * - / → Inventory page (protected, requires token)
+ */
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("token"));
 
