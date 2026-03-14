@@ -1,3 +1,5 @@
+from math import prod
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -45,12 +47,14 @@ class ProductSchema(BaseModel):
         price     (float): Product price as a decimal number.
         stock     (int):   Available quantity in inventory.
         category  (str):   Product category.
+        sku       (str):   Stock Keeping Unit
         is_active (bool):  Indicates whether the product is active. Defaults to True.
     """
     name: str
     price: float
     stock: int
     category: str
+    sku: str
     is_active: bool = True
 
 
@@ -122,10 +126,15 @@ Create a new product in the database.
 Process:
 1. Establish a connection to the PostgreSQL database.
 2. Create a cursor to execute the SQL query.
-3. Execute an INSERT query to add the product with name, price, stock, and category.
-4. Commit the transaction to save the changes.
-5. Close the cursor and database connection.
-6. Return a success message.
+3. Determine the product status (is_active). A product is considered active when its stock is greater than 0.
+4. Execute an INSERT query to add the product with name, price, stock, category and sku.
+5. Commit the transaction to save the changes.
+6. If the SKU already exists, roll back the transaction and return a 400 error.
+7. Close the cursor and database connection.
+8. Return a success message.
+
+Raises:
+    HTTPException 400: If the SKU already exists in the database (enforced by a unique constraint at the database level).
 """
 @app.post("/products")
 def create_product(product: ProductSchema):
@@ -135,16 +144,24 @@ def create_product(product: ProductSchema):
     # Create a cursor to execute the SQL query
     cursor = conn.cursor()
 
+    # Determine if the product should be active.
+    # Products with stock greater than 0 are considered active.
     is_active = product.stock > 0
 
-    # Execute INSERT query to add the product with name, price, stock, and category
-    cursor.execute(
-        "INSERT INTO products (name, price, stock, category, is_active) VALUES (%s, %s, %s, %s, %s)",
-        (product.name, product.price, product.stock, product.category, is_active)
-    )
+    try:
+        # Execute INSERT query to add the product with name, price, stock, category and sku
+        cursor.execute(
+            "INSERT INTO products (name, price, stock, category, sku, is_active) VALUES (%s, %s, %s, %s, %s, %s)",
+            (product.name, product.price, product.stock, product.category, product.sku, is_active)
+        )
 
-    # Commit the transaction to save the changes to the database
-    conn.commit()
+        # Commit the transaction to save the changes to the database
+        conn.commit()
+
+    except Exception:
+        # Roll back the transaction if the SKU already exists
+        conn.rollback()
+        raise HTTPException(status_code=400, detail="SKU already exists")
 
     # Close cursor and connection to release resources
     cursor.close()
@@ -162,13 +179,18 @@ Process:
 1. Establish a connection to the PostgreSQL database.
 2. Create a cursor to execute the SQL query.
 3. Determine the product status (is_active). A product is considered active when its stock is greater than 0.
-4. Execute an UPDATE query to modify the product with the given id using name, price, stock, and category.
+4. Execute an UPDATE query to modify the product with the given id using name, price, stock, category and sku.
 5. Commit the transaction to save the changes.
-6. Close the cursor and database connection.
-7. Return a success message.
+6. If the SKU already exists, roll back the transaction and return a 400 error.
+7. Close the cursor and database connection.
+8. Return a success message.
+
+Raises:
+    HTTPException 400: If the updated SKU already belongs to another product (enforced by a unique constraint at the database level).
 """
 @app.put("/products/{id}")
 def update_product(id: int, product: ProductSchema):
+    # Open a new connection to the PostgreSQL database
     conn = get_connection()
 
     # Create a cursor to execute the SQL query
@@ -178,14 +200,20 @@ def update_product(id: int, product: ProductSchema):
     # Products with stock greater than 0 are considered active.
     is_active = product.stock > 0
 
-    # Execute UPDATE query to modify the product with the given id
-    cursor.execute(
-        "UPDATE products SET name=%s, price=%s, stock=%s, category=%s, is_active=%s WHERE id=%s",
-        (product.name, product.price, product.stock, product.category, is_active, id)
-    )
+    try:
+        # Execute UPDATE query to modify the product with the given id
+        cursor.execute(
+            "UPDATE products SET name=%s, price=%s, stock=%s, category=%s, sku=%s, is_active=%s WHERE id=%s",
+            (product.name, product.price, product.stock, product.category, product.sku, is_active, id)
+        )
 
-    # Commit the transaction to save the changes to the database
-    conn.commit()
+        # Commit the transaction to save the changes to the database
+        conn.commit()
+
+    except Exception:
+        # Roll back the transaction if the SKU already belongs to another product
+        conn.rollback()
+        raise HTTPException(status_code=400, detail="SKU already exists")
 
     # Close cursor and connection to release resources
     cursor.close()
