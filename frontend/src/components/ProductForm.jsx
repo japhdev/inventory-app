@@ -16,7 +16,9 @@ function ProductForm({ onProductCreate, productEdit, onCancel }) {
         name: "",
         price: "",
         stock: "",
-        category: "",
+        sku: "",
+        category: ""
+
     });
 
     // Load categories from API
@@ -42,7 +44,7 @@ function ProductForm({ onProductCreate, productEdit, onCancel }) {
         if (productEdit) {
             setForm(productEdit);
         } else {
-            setForm({ name: "", price: "", stock: "", category: "" });
+            setForm({ name: "", price: "", stock: "", sku: "", category: "" });
         }
     }, [productEdit]);
 
@@ -98,6 +100,7 @@ function ProductForm({ onProductCreate, productEdit, onCancel }) {
             .then(() => {
                 onProductCreate();
                 onCancel();
+                setForm({ name: "", price: "", stock: "", sku: "", category: "" });
             });
     };
 
@@ -108,6 +111,15 @@ function ProductForm({ onProductCreate, productEdit, onCancel }) {
                 name="name"
                 placeholder="Name"
                 value={form.name}
+                onChange={handleChange}
+                required
+            />
+
+            {/* Input field for product sku*/}
+            <input
+                name="sku"
+                placeholder="SKU (e.g. PROD-001)"
+                value={form.sku}
                 onChange={handleChange}
                 required
             />
@@ -144,7 +156,7 @@ function ProductForm({ onProductCreate, productEdit, onCancel }) {
 
             {/* Add new category */}
             {!showAddCategory ? (
-                <button type="button" onClick={() => setShowAddCategory(true)}>
+                <button type="button" className="btn-new-category" onClick={() => setShowAddCategory(true)}>
                     + New category
                 </button>
             ) : (
@@ -154,17 +166,19 @@ function ProductForm({ onProductCreate, productEdit, onCancel }) {
                         value={newCategory}
                         onChange={(e) => setNewCategory(e.target.value)}
                     />
-                    <button type="button" onClick={handleAddCategory}>Add Category</button>
+                    <button type="button" className="btn-add-category" onClick={handleAddCategory}>Add Category</button>
                     <button type="button" className="btn-cancel" onClick={() => setShowAddCategory(false)}>Cancel</button>
                 </div>
             )}
 
             {/* Submit button for creating or updating a product */}
-            <button type="submit">{productEdit ? "Save Change" : "Add"}</button>
+            <button type="submit" className="btn-submit">
+                {productEdit ? "Save Change" : "Add"}
+            </button>
 
             {/* Submit button for creating or updating a product */}
             {productEdit && (
-                <button type="button"  className="btn-cancel" onClick={onCancel}>
+                <button type="button" className="btn-cancel" onClick={onCancel}>
                     Cancel
                 </button>
             )}
