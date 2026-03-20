@@ -68,6 +68,7 @@ body {
 
 .form button {
   height: 36px;
+  width: 150px;
   padding: 0 8px;
   border: none;
   background-color: #09090b;
@@ -109,7 +110,7 @@ body {
   background: #fff;
 }
 
-.btn-add-category {
+.form .btn-new-category {
   height: 36px;
   padding: 0 14px;
   background: #ffffff;
@@ -120,10 +121,11 @@ body {
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
+  flex-basis: 100%;
   transition: background-color 0.15s, border-color 0.15s, color 0.15s;
 }
 
-.btn-add-category:hover {
+.form .btn-new-category:hover {
   background-color: #f4f4f5;
   border-color: #a1a1aa;
   color: #09090b;
@@ -157,6 +159,25 @@ body {
   background: #fff;
 }
 
+.new-category-form .btn-add-category {
+  height: 36px;
+  padding: 0 14px;
+  background: #ffffff;
+  color: #3f3f46;
+  border: 1px dashed #d4d4d8;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.new-category-form .btn-add-category:hover {
+  background-color: #f4f4f5;
+  border-color: #a1a1aa;
+  color: #09090b;
+}
 .form .btn-cancel {
   background: #ffffff;
   color: #be123c;
@@ -175,13 +196,14 @@ body {
   font-size: 13.5px;
 }
 
-.col-id       { width: 50px; }
-.col-name     { width: 22%; }
-.col-price    { width: 70px; }
-.col-stock    { width: 60px; }
-.col-category { width: 90px; }
-.col-actions  { width: 110px; }
-.col-state    { width: 90px; }
+.col-id       { width: 7%; }
+.col-sku      { width: 15%; }
+.col-name     { width: 18%; }
+.col-category { width: 15%; }
+.col-price    { width: 10%; }
+.col-stock    { width: 10%; }
+.col-state    { width: 10%; }
+.col-actions  { width: 15%; }
 
 .table-header th {
   background-color: #f4f4f5;
