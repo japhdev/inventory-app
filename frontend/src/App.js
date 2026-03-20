@@ -129,16 +129,16 @@ function Inventory() {
   return (
     <div className="inventory-container">
 
-       {/* Filter Panel */}
-        <FilterPanel
-          categories={categories}
-          filters={filters}
-          onFilterChange={handleFilterChange}
-          onClearFilters={handleClearFilters}
-        />
+      {/* Filter Panel */}
+      <FilterPanel
+        categories={categories}
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onClearFilters={handleClearFilters}
+      />
 
       {/* Sell Panel */}
-        <SellPanel products={products} onSaleComplete={fetchProducts} />
+      <SellPanel products={products} onSaleComplete={fetchProducts} />
 
       {/* Central content */}
       <div className="inventory-header">
@@ -184,12 +184,13 @@ function Inventory() {
           <thead className="table-header">
             <tr>
               <th className="col-id">ID</th>
+              <th className="col-sku">SKU</th>
               <th className="col-name">Name</th>
+              <th className="col-category">Category</th>
               <th className="col-price">Price</th>
               <th className="col-stock">Stock</th>
-              <th className="col-category">Category</th>
-              <th className="col-actions">Actions</th>
               <th className="col-state">State</th>
+              <th className="col-actions">Actions</th>
             </tr>
           </thead>
 
@@ -198,13 +199,18 @@ function Inventory() {
             {filteredProducts.map((p) => (
               <tr key={p.id} className={`table-row ${p.stock <= 3 && p.stock > 0 ? "row-alert" : ""}`}>
                 {/* Cells with product information */}
-                <td className="table-cell">{p.id}</td>
+                <td className="table-cell">#{p.id}</td>
+                <td className="table-cell">{p.sku}</td>
                 <td className="table-cell" title={p.name}>{p.name}</td>
-                <td className="table-cell">{p.price}</td>
-                <td className="table-cell">{p.stock} {p.stock <= 3 && p.stock > 0 ? "⚠️" : ""}</td>
                 <td className="table-cell" title={p.category}>{p.category}</td>
-
-                {/* Action buttons (edit or delete product) */}
+                <td className="table-cell">$ {p.price}</td>
+                <td className="table-cell">{p.stock} {p.stock <= 3 && p.stock > 0 ? "⚠️" : ""}</td>
+                <td>
+                  {p.is_active
+                    ? <span className="badge-active">●  Active</span>
+                    : <span className="badge-inactive">●  Inactive</span>
+                  }
+                </td>
                 <td>
                   <button className="btn-edit" onClick={() => setProductEdit(p)}>
                     Edit
@@ -216,13 +222,7 @@ function Inventory() {
                     Delete
                   </button>
                 </td>
-                {/* Product status indicator  */}
-                <td>
-                  {p.is_active
-                    ? <span className="badge-active">●  Active</span>
-                    : <span className="badge-inactive">●  Inactive</span>
-                  }
-                </td>
+
               </tr>
             ))}
           </tbody>
