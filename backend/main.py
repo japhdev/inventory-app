@@ -274,8 +274,8 @@ def sell_product(id: int, quantity: int):
     conn = get_connection()
     cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-    # Check if product exists and get current stock
-    cursor.execute("SELECT stock FROM products WHERE id=%s", (id,))
+    # Execute SQL query to retrieve the product by its ID
+    cursor.execute("SELECT * FROM products WHERE id=%s", (id,))
     product = cursor.fetchone()
 
     if not product:
@@ -291,10 +291,18 @@ def sell_product(id: int, quantity: int):
     new_stock = product["stock"] - quantity
     is_active = new_stock > 0
 
+    # Update stock
     cursor.execute(
         "UPDATE products SET stock=%s, is_active=%s WHERE id=%s",
         (new_stock, is_active, id)
     )
+
+    # Save sale to history
+    cursor.execute(
+        "INSERT INTO sales (product_id, product_name, quantity, price_at_sale) VALUES (%s, %s, %s, %s)",
+        (id, product["name"], quantity, product["price"])
+    )
+
     conn.commit()
     cursor.close()
     conn.close()
@@ -497,3 +505,80 @@ def delete_category(id: int):
 
     # Return success message as JSON response
     return {"message": "Category deleted successfully"}
+
+"""
+GET /sales
+
+Retrieve all sales records from the database, ordered by date (most recent first)
+
+Process:
+1. Establish a connection to the PostgreSQL data base.
+2. Create a cursor with RalDictCursor to return rows as dictionaries.
+3. Execute a SELECT query to fetch all sales order by sold_at DESC.
+4. Fetch all resulting rows. 
+5. Close the cursor and database connection.
+6. Return the list of sale as a JSON response.
+
+
+"""
+@app.get("/sales")
+def get_sales():
+    # Open a new connection to the PostgreSQL database
+    conn = get_connection()
+
+    # Create a cursor that returns rows as dictionaries instead of tuples
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    # Execute SELECT query to fetch all sales ordered by most recent first
+    cursor.execute("""
+        SELECT * FROM sales
+        ORDER BY sold_at DESC
+    """)
+
+    # Fetch all rows from the query result
+    sales = cursor.fetchall()
+
+    # Close cursor and connection to release resources
+    cursor.close()
+    conn.close()
+
+    # Return the list of sales as a JSON response
+    return sales
+
+"""
+GET /sales/product/{product_id}
+
+Retrieve all sales records associated with a specific product by its ID.
+
+Process:
+1. Establish a connection to the PostgreSQL database.
+2. Create a cursor with RealDictCursor to return rows as dictionaries.
+3. Execute a SELECT query filtering sales by product_id, ordered by sold_at DESC.
+4. Fetch all resulting rows.
+5. Close the cursor and database connection.
+6. Return the list of sales for that product as a JSON response.
+"""
+@app.get("/sales/product/{product_id}")
+def get_product_sales(product_id: int):
+    # Open a new connection to the PostgreSQL database
+    conn = get_connection()
+
+    # Create a cursor that returns rows as dictionaries instead of tuples
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    # Execute SELECT query filtering by product_id, ordered by most recent first
+    cursor.execute("""
+    SELECT * FROM sales
+    WHERE product_id = %s
+    ORDER BY sold_at DESC
+""", (product_id,))
+    
+    # Fetch all rows from the query result
+    sales = cursor.fetchall()
+
+    # Close cursor and connection to release resources
+    cursor.close()
+    conn.close()
+
+    # Return the list of sales for the given product as a JSON response
+    return sales
